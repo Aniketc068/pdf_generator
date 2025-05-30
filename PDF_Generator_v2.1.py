@@ -311,7 +311,7 @@ watermark_button = tk.Button(root, text="Browse Watermark", bg="#CD9B1D", comman
 watermark_button.place(x=530, y=125)
 
 # Add this in your GUI creation section, somewhere appropriate, e.g. below other entries
-size_label = tk.Label(root, text="Enter desired PDF size in KB (e.g. 1000 for 1MB):", bg='black', fg='white', font=("Helvetica", 10, "bold"))
+size_label = tk.Label(root, text="Enter desired PDF size in KB (e.g. 1024 for 1MB):", bg='black', fg='white', font=("Helvetica", 10, "bold"))
 size_label.place(x=10, y=240)
 
 size_entry = tk.Entry(root, width=30)
