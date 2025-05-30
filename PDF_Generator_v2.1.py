@@ -25,6 +25,7 @@ import tempfile
 
 MAX_PAGES = 100000
 MAX_PDFS = 100000
+stop_flag = threading.Event()
 selected_folder_path = ""
 
 # Check if another instance is already running
@@ -33,6 +34,19 @@ if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
     tk.Tk().withdraw()
     messagebox.showerror("Error", "Another instance of the application is already running.")
     sys.exit(1)
+
+def stop_generation():
+    stop_flag.set()
+    overlay.lower()
+    loading_label.place_forget()
+    stop_button.place_forget()
+    progress_bar["value"] = 0
+    
+def on_closing():
+    if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
+        stop_flag.set()  # Stop any running generation
+        root.destroy()
+        sys.exit(0)
 
 def add_padding_to_pdf(filepath, target_size_kb):
     target_size_bytes = target_size_kb * 1024
@@ -101,9 +115,15 @@ def generate_pdfs():
     progress_bar.lift()
     version_label.lift()
     animate_dots()
+    stop_flag.clear()
+    stop_button.place(x=10, y=240)
+    stop_button.lift()  # 🔥 LIFT IT ABOVE OVERLAY
+    flash_stop_button()
 
     def generate_pdf_thread():
         for i in range(num_pdfs):
+            if stop_flag.is_set():
+                break
             filename = os.path.join(folder_path, f"PDF_{i+1}.pdf")
             try:
                 c = canvas.Canvas(filename, pagesize=letter)
@@ -218,13 +238,18 @@ def generate_pdfs():
                 return
             progress_bar["value"] = i + 1
 
-        messagebox.showinfo("Success", f"{num_pdfs} PDFs generated successfully!")
+        if stop_flag.is_set():
+            messagebox.showinfo("Stopped", "PDF generation was stopped by the user.")
+        else:
+            messagebox.showinfo("Success", f"{num_pdfs} PDFs generated successfully!")
         
         progress_bar["value"] = 0  # Reset progress bar
         overlay.lower()
         loading_label.place_forget()
+        stop_button.place_forget()
+        
 
-    threading.Thread(target=generate_pdf_thread).start()
+    threading.Thread(target=generate_pdf_thread, daemon=True).start()
 
 def browse_folder():
     folder_path = filedialog.askdirectory()
@@ -388,6 +413,18 @@ loading_label.place_forget()  # Initially hidden
 progress_bar = ttk.Progressbar(root, length=660, mode='determinate', style="custom.Horizontal.TProgressbar")
 progress_bar.place(x=5, y=270)
 
+stop_button = tk.Button(root, text="✖ Stop", bg="red", fg="white", font=("Helvetica", 10, "bold"),
+                        cursor="hand2", command=stop_generation)
+stop_button.place(x=10, y=240)  # Left of version_label
+stop_button.place_forget()  # Initially hidden
+
+def flash_stop_button():
+    current_color = stop_button.cget("bg")
+    new_color = "black" if current_color == "red" else "red"
+    stop_button.config(bg=new_color)
+    if stop_button.winfo_ismapped():
+        root.after(500, flash_stop_button)
+
 # Create a function to open the link
 def open_link(event):
     webbrowser.open("https://github.com/Aniketc068")
@@ -397,5 +434,7 @@ version_label.place(x=580, y=275)
 
 # Bind the label to open the link when clicked
 version_label.bind("<Button-1>", open_link)
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
 
 root.mainloop()
