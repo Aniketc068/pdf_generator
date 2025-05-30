@@ -17,7 +17,7 @@ A Python application to generate multiple PDF files with custom text, watermarks
 
 ## Screenshots
 
-![App GUI](https://github.com/Aniketc068/pdf_generator/blob/main/GUI.png)
+![App GUI](https://www.managexindia.com/GUI.png)
 
 
 ## System Requirements
