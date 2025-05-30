@@ -80,6 +80,10 @@ def generate_pdfs():
     progress_bar["value"] = 0
     progress_bar["maximum"] = num_pdfs
 
+    overlay.lift()
+    progress_bar.lift()
+    version_label.lift()
+
     def generate_pdf_thread():
         for i in range(num_pdfs):
             filename = f"{folder_path}/PDF_{i+1}.pdf"
@@ -183,7 +187,9 @@ def generate_pdfs():
             progress_bar["value"] = i + 1
 
         messagebox.showinfo("Success", f"{num_pdfs} PDFs generated successfully!")
+        
         progress_bar["value"] = 0  # Reset progress bar
+        overlay.lower()
 
     threading.Thread(target=generate_pdf_thread).start()
 
@@ -325,6 +331,11 @@ button_browse.place(x=530, y=8) # Adjust the coordinates as needed
 
 button_generate = tk.Button(root, text="Generate PDFs", bg="#00C957", command=generate_pdfs, cursor="hand2", font=("Helvetica", 10, "bold"))
 button_generate.place(x=550, y=200) # Adjust the coordinates as needed
+
+
+overlay = tk.Frame(root, bg='black')
+overlay.place(x=0, y=0, relwidth=1, relheight=1)
+overlay.lower()
 
 
 progress_bar = ttk.Progressbar(root, length=660, mode='determinate', style="custom.Horizontal.TProgressbar")
