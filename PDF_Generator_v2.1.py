@@ -19,10 +19,13 @@ import win32event
 import win32api
 import winerror
 from functools import partial
+from reportlab.pdfbase.pdfmetrics import stringWidth
 import tempfile
+
 
 MAX_PAGES = 100000
 MAX_PDFS = 100000
+selected_folder_path = ""
 
 # Check if another instance is already running
 mutex = win32event.CreateMutex(None, 1, "UniqueAppMutexName")
@@ -41,7 +44,21 @@ def add_padding_to_pdf(filepath, target_size_kb):
 
 
 def open_link(event):
-    webbrowser.open("https://sourceforge.net/u/aniketc007/profile")
+    webbrowser.open("https://github.com/Aniketc068")
+
+def animate_dots():
+    dots = ["", ".", "..", "..."]
+    loading_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Show the label
+
+    def loop(i=0):
+        # Only animate if the overlay is still visible
+        if overlay.winfo_ismapped():
+            loading_label.config(text=f"Just a moment We're crafting your PDF!{dots[i % 4]}")
+            root.after(500, loop, i + 1)
+        else:
+            loading_label.place_forget()  # Hide label when overlay is hidden
+
+    loop()
 
 def generate_pdfs():
     folder_path = entries[0].get()
@@ -83,15 +100,20 @@ def generate_pdfs():
     overlay.lift()
     progress_bar.lift()
     version_label.lift()
+    animate_dots()
 
     def generate_pdf_thread():
         for i in range(num_pdfs):
-            filename = f"{folder_path}/PDF_{i+1}.pdf"
+            filename = os.path.join(folder_path, f"PDF_{i+1}.pdf")
             try:
                 c = canvas.Canvas(filename, pagesize=letter)
 
                 # Define page dimensions
                 page_width, page_height = letter
+
+                default_font = "Helvetica"
+                default_font_size = 12
+                c.setFont(default_font, default_font_size)
 
                 # Adding watermark to all pages if a watermark is provided
                 if watermark_path and watermark_path.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -126,6 +148,12 @@ def generate_pdfs():
                         temp_watermark_path = temp_file.name
                         img.save(temp_watermark_path)
 
+
+                    page_width, page_height = letter
+
+                    # Set font once before drawing text on each page
+                    c.setFont(default_font, default_font_size)
+
                     # Loop through each page and draw watermark and text
                     for _ in range(num_pages):
                         # Draw watermark
@@ -143,7 +171,9 @@ def generate_pdfs():
                                     messagebox.showerror("Error", "Please enter valid numbers for X and Y.")
                                     return
                             else:
-                                x, y = 497, 125  # Default placement
+                                text_width = stringWidth(custom_text, default_font, default_font_size)
+                                x = (page_width - text_width) / 2
+                                y = page_height / 2
 
                             c.drawString(x, y, custom_text)
                         c.showPage()
@@ -166,7 +196,9 @@ def generate_pdfs():
                                     messagebox.showerror("Error", "Please enter valid numbers for X and Y.")
                                     return
                             else:
-                                x, y = 497, 125  # Default placement
+                                text_width = stringWidth(custom_text, default_font, default_font_size)
+                                x = (page_width - text_width) / 2
+                                y = page_height / 2
 
                             c.drawString(x, y, custom_text)
                         c.showPage()
@@ -190,6 +222,7 @@ def generate_pdfs():
         
         progress_bar["value"] = 0  # Reset progress bar
         overlay.lower()
+        loading_label.place_forget()
 
     threading.Thread(target=generate_pdf_thread).start()
 
@@ -224,8 +257,12 @@ logo_buffer = BytesIO(logo_bytes)
 # Open the image using PIL
 logo_image = Image.open(logo_buffer)
 
-if not ctypes.windll.shell32.IsUserAnAdmin():
+if __name__ == "__main__":
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        # Relaunch as admin and exit current instance
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+        sys.exit()
+
 
 root = tk.Tk()
 root.title("PDF Generator")
@@ -262,6 +299,12 @@ for i, label_text in enumerate(labels):
     entry.place(x=330, y=30*i+10)
     entries.append(entry)
 
+def limit_text_length(new_text):
+    return len(new_text) <= 64
+
+vcmd = (root.register(limit_text_length), '%P')  # '%P' passes the new value of entry after edit
+
+entries[3].config(validate='key', validatecommand=vcmd)
 
 # Create a custom style for the progressbar
 style = ttk.Style()
@@ -336,6 +379,10 @@ button_generate.place(x=550, y=200) # Adjust the coordinates as needed
 overlay = tk.Frame(root, bg='black')
 overlay.place(x=0, y=0, relwidth=1, relheight=1)
 overlay.lower()
+
+loading_label = tk.Label(overlay, text="Just a moment We're crafting your PDF!", fg="white", bg="black", font=("Helvetica", 16, "bold"))
+loading_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+loading_label.place_forget()  # Initially hidden
 
 
 progress_bar = ttk.Progressbar(root, length=660, mode='determinate', style="custom.Horizontal.TProgressbar")
