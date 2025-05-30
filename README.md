@@ -77,7 +77,7 @@ python PDF_Generator_v2.1.py
 
 - Only one instance can run at a time
 
-- Default text position is at (497, 125) in PDF coordinates
+- Default text position is Center of the PDF coordinates
 
 - Watermark transparency is set to 20%
 
