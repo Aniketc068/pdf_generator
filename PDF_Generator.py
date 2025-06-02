@@ -450,7 +450,7 @@ def flash_stop_button():
 def open_link(event):
     webbrowser.open("https://github.com/Aniketc068")
 
-version_label = tk.Label(root, text="Version 2.1", fg="white", bg="black", font=("Helvetica", 10, "bold"), cursor="hand2")
+version_label = tk.Label(root, text="Version 2.2", fg="white", bg="black", font=("Helvetica", 10, "bold"), cursor="hand2")
 version_label.place(x=580, y=275)
 
 # Bind the label to open the link when clicked
